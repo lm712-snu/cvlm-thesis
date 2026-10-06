@@ -2,6 +2,7 @@
 
 import type { ComponentType } from "react";
 import { TopBar } from "@/components/cvlm/Shell";
+import { ModuleNav } from "@/components/cvlm/ModuleNav";
 import { useAppStore } from "@/store/app-store";
 import { HomeDashboard } from "@/components/modules/HomeDashboard";
 import { Module1_ImageRepresentation } from "@/components/modules/Module1_ImageRepresentation";
@@ -62,6 +63,7 @@ export default function Home() {
       <TopBar />
       <main className="mx-auto max-w-7xl px-4 py-6 md:px-6">
         <Active />
+        <ModuleNav />
       </main>
       <footer className="mt-auto border-t px-4 py-3 text-center text-[10px] text-muted-foreground">
         <p>
