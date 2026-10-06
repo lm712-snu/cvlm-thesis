@@ -1,0 +1,71 @@
+# Build the Next.js app as a static site and deploy to GitHub Pages.
+#
+# Trigger: every push to main (or master).
+# Output:  https://<user>.github.io/<repo-name>/
+#
+# The workflow handles the basePath/assetPrefix automatically by reading
+# the repository name, so you do NOT need to edit next.config.ts yourself.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow one concurrent deployment.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Patch next.config.ts for GitHub Pages
+        run: |
+          node -e "const fs=require('fs');const repo=process.env.GITHUB_REPOSITORY.split('/')[1];fs.writeFileSync('next.config.ts', \`import type { NextConfig } from \"next\";\nconst REPO_NAME = \"\${repo}\";\nconst nextConfig: NextConfig = {\n  output: \"export\",\n  images: { unoptimized: true },\n  basePath: REPO_NAME ? \`/\${REPO_NAME}\` : \"\",\n  assetPrefix: REPO_NAME ? \`/\${REPO_NAME}/\` : \"\",\n  reactStrictMode: false,\n  typescript: { ignoreBuildErrors: true },\n};\nexport default nextConfig;\n\`);console.log('Wrote next.config.ts for repo:', repo);"
+
+      - name: Build static site
+        run: bun run build:static
+
+      - name: Add .nojekyll
+        run: touch ./out/.nojekyll
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./out
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
