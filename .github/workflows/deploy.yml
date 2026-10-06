@@ -1,7 +1,11 @@
-# Build the Next.js app as a static site and deploy to GitHub Pages.
+# Build the existing Next.js app as a static site and deploy it to GitHub Pages.
 #
-# Trigger: every push to main (or master).
-# Output:  https://<user>.github.io/<repo-name>/
+# IMPORTANT:
+# The repository itself is NOT changed by the API workaround below.
+# The app contains a tiny demo /api route ("Hello, world!") which is not
+# needed by the thesis UI. GitHub Pages cannot host server-side API routes,
+# so the workflow temporarily moves that route out of the build workspace.
+# The source code in the repository remains untouched.
 
 name: Deploy to GitHub Pages
 
@@ -57,6 +61,14 @@ jobs:
 
           export default nextConfig;
           EOF
+
+      - name: Temporarily exclude server-only API route
+        shell: bash
+        run: |
+          if [ -d "src/app/api" ]; then
+            mv src/app/api /tmp/cvlm-api
+            echo "Temporarily excluded src/app/api from static build."
+          fi
 
       - name: Build static site
         run: bun run build:static
